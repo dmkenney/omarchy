@@ -6,8 +6,23 @@
 -- clicked anywhere, a second `chromium <url>` from a terminal -- activates the
 -- window that owns the session and the view jumps to whichever workspace that
 -- window lives on. Telegram opts out the same way (apps/telegram.lua).
-o.window("((google-)?[cC]hrom(e|ium)|[bB]rave-browser|[mM]icrosoft-edge|Vivaldi-stable|helium)", { tag = "+chromium-based-browser", focus_on_activate = false })
-o.window("([fF]irefox|zen|librewolf)", { tag = "+firefox-based-browser", focus_on_activate = false })
+--
+-- The opt-out names the classes the browsers report instead of a substring of
+-- them, because an Omarchy web app is a Chromium window too: its class is
+-- chrome-<host>_<path>-Default (omarchy-webapp-window-class), which an
+-- unanchored pattern catches. That matters off the browser's own path --
+-- clicking a web app's notification runs the notification's default action, and
+-- only when nothing was invoked does the shell raise the sender by class
+-- (shell/plugins/notifications/Service.qml), so a web app whose activation
+-- request is suppressed has nothing left to bring its window up. The suffixes
+-- are the names the Chromium releases ship under (chromium and chromium-browser
+-- on one machine; google-chrome-stable/-beta/-dev/-unstable), none of which the
+-- web app class can spell. The tags keep their unscoped patterns: apps/pip.lua
+-- and the video rules below key off them for web apps.
+o.window("((google-)?[cC]hrom(e|ium)|[bB]rave-browser|[mM]icrosoft-edge|Vivaldi-stable|helium)", { tag = "+chromium-based-browser" })
+o.window("([fF]irefox|zen|librewolf)", { tag = "+firefox-based-browser" })
+o.window("^((google-)?[cC]hrom(e|ium)(-browser|-stable|-beta|-dev|-unstable)?|[bB]rave-browser|[mM]icrosoft-edge|Vivaldi-stable|helium)$", { focus_on_activate = false })
+o.window("^(([fF]irefox)(-developer-edition)?|zen|librewolf)$", { focus_on_activate = false })
 o.window({ tag = "chromium-based-browser" }, { tile = true })
 
 -- Video apps: remove the chromium browser tag so they can float.
