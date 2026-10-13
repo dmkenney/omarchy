@@ -105,3 +105,26 @@ HOME="$test_home" PATH="$mock_bin:$PATH" HYPRLAND_INSTANCE_SIGNATURE=test \
 
 [[ ! -e $focus_log ]] || fail "a URL handed to the running browser leaves the view where it is" "$(cat "$focus_log")"
 pass "a URL handed to the running browser leaves the view where it is"
+
+rm -f "$mock_bin/omarchy-cmd-browser-handoff" "$launch_log"
+help_log="$test_tmp/help"
+cat >"$mock_bin/chromium" <<'SH'
+#!/bin/bash
+[[ $1 != "--help" ]] || printf 'probed\n' >>"$OMARCHY_TEST_BROWSER_HELP"
+SH
+chmod +x "$mock_bin/chromium"
+launch() {
+  HOME="$test_home" PATH="$mock_bin:$PATH" OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" \
+    OMARCHY_TEST_BROWSER_FOCUS="$focus_log" OMARCHY_TEST_BROWSER_HELP="$help_log" \
+    bash "$ROOT/bin/omarchy-launch-browser" "$@"
+}
+
+launch "https://example.test/a--private-b"
+[[ ! -e $help_log ]] || fail "an ordinary launch doesn't probe the browser's flags"
+grep -F 'https://example.test/a--private-b' "$launch_log" >/dev/null || fail "an ordinary launch leaves its arguments alone"
+pass "an ordinary launch doesn't probe the browser's flags"
+
+launch --private
+[[ -s $help_log ]] || fail "a private launch probes the browser's private flag"
+grep -F -- 'chromium --incognito' "$launch_log" >/dev/null || fail "a private launch passes the browser's private flag"
+pass "a private launch passes the browser's private flag"
