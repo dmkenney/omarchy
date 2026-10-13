@@ -41,10 +41,15 @@ hl = {
 require("default.hypr.helpers")
 require("default.hypr.apps.browser")
 
+-- A rule that opts back in must not read as an opt-out: the classification keys
+-- on the value, not on the key being set, so a future focus_on_activate = true
+-- cannot pass this test unnoticed.
+o.window("focus-on-activate-probe", { focus_on_activate = true })
+
 for _, rule in ipairs(rules) do
   local class = rule.match and rule.match.class
   if type(class) == "string" then
-    if rule.focus_on_activate ~= nil then
+    if rule.focus_on_activate == false then
       print("opt-out\t" .. class)
     elseif type(rule.tag) == "string" and rule.tag:sub(1, 1) == "+" then
       print("tag\t" .. rule.tag .. "\t" .. class)
@@ -82,6 +87,14 @@ opt_out_matches chromium || fail "chromium ignores activation requests" "$output
 # desktop entry it was started from.
 opt_out_matches chromium-browser || fail "chromium-browser ignores activation requests" "$output"
 opt_out_matches google-chrome-stable || fail "a Chrome release suffix still opts out" "$output"
+opt_out_matches google-chrome-beta || fail "a Chrome beta release still opts out" "$output"
+# Brave and Edge ship their channels as separate packages with their own window
+# class; the family tag catches them, so the opt-out has to as well.
+opt_out_matches brave-browser || fail "brave-browser ignores activation requests" "$output"
+opt_out_matches Brave-browser-beta || fail "a Brave channel build still opts out" "$output"
+opt_out_matches microsoft-edge || fail "microsoft-edge ignores activation requests" "$output"
+opt_out_matches microsoft-edge-dev || fail "an Edge channel build still opts out" "$output"
+opt_out_matches Vivaldi-snapshot || fail "a Vivaldi snapshot still opts out" "$output"
 pass "chromium-based browsers ignore activation requests"
 
 opt_out_matches firefox || fail "firefox ignores activation requests" "$output"
@@ -91,6 +104,12 @@ pass "firefox-based browsers ignore activation requests"
 ! opt_out_matches "$web_app_class" ||
   fail "web apps keep their activation requests, so a notification click can raise them" "$output"
 pass "web apps keep their activation requests"
+
+# The regression guard above only bites if a rule that opts back in reads as an
+# opt-out -- prove the classification is on the value.
+! opt_out_matches focus-on-activate-probe ||
+  fail "a rule that opts back in is not read as an opt-out" "$output"
+pass "only an explicit opt-out counts as one"
 
 # apps/pip.lua and the video rules float web apps by dropping this tag, so web
 # apps have to keep carrying it.

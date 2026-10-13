@@ -16,12 +16,14 @@
 -- (shell/plugins/notifications/Service.qml), so a web app whose activation
 -- request is suppressed has nothing left to bring its window up. The suffixes
 -- are the names the Chromium releases ship under (chromium and chromium-browser
--- on one machine; google-chrome-stable/-beta/-dev/-unstable), none of which the
+-- on one machine; google-chrome-stable/-beta/-dev/-unstable; Brave's
+-- -beta/-dev/-nightly and Edge's -beta/-dev channel builds, which are their own
+-- packages and report their own class; Vivaldi's -snapshot), none of which the
 -- web app class can spell. The tags keep their unscoped patterns: apps/pip.lua
 -- and the video rules below key off them for web apps.
 o.window("((google-)?[cC]hrom(e|ium)|[bB]rave-browser|[mM]icrosoft-edge|Vivaldi-stable|helium)", { tag = "+chromium-based-browser" })
 o.window("([fF]irefox|zen|librewolf)", { tag = "+firefox-based-browser" })
-o.window("^((google-)?[cC]hrom(e|ium)(-browser|-stable|-beta|-dev|-unstable)?|[bB]rave-browser|[mM]icrosoft-edge|Vivaldi-stable|helium)$", { focus_on_activate = false })
+o.window("^((google-)?[cC]hrom(e|ium)(-browser|-stable|-beta|-dev|-unstable)?|[bB]rave-browser(-beta|-dev|-nightly)?|[mM]icrosoft-edge(-beta|-dev)?|Vivaldi-stable|Vivaldi-snapshot|helium)$", { focus_on_activate = false })
 o.window("^(([fF]irefox)(-developer-edition)?|zen|librewolf)$", { focus_on_activate = false })
 o.window({ tag = "chromium-based-browser" }, { tile = true })
 
