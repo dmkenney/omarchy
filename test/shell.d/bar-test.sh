@@ -462,6 +462,11 @@ assert(
   /height: root\.vertical \? slot\.panelIndicatorExtent : Style\.space\(2\)/.test(indicator),
   'bar sizes the open-panel mark from the same content hint on both axes'
 )
+assert(
+  /if \(root\.vertical\) return Math\.max\(Style\.space\(10\), Math\.round\(slot\.widgetHeight \* 0\.55\)\)/.test(barSource) &&
+  /return Math\.max\(Style\.space\(10\), Math\.round\(width \* 0\.55\), Math\.round\(width - Style\.space\(12\)\)\)/.test(barSource),
+  'bar underlines a wide module across its content, and keeps the short mark for an icon slot'
+)
 
 assertEqual(bar.normalizePosition('left'), 'left', 'bar accepts valid positions')
 assertEqual(bar.normalizePosition('sideways'), 'top', 'bar defaults invalid positions')
