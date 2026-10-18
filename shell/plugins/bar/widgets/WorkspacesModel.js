@@ -1,57 +1,61 @@
-// Which workspace numbers a bar shows, kept Qt-free so it can be unit tested
-// under node (test/shell.d/workspaces-test.sh).
+// Which workspaces a bar shows, kept Qt-free so it can be unit tested under
+// node (test/shell.d/workspaces-test.sh).
 //
-// Settings on the bar entry:
-// - persistent: numbers shown even before their workspace exists (default 1-5).
-//   An empty list shows only the workspaces that exist.
-// - perMonitor: each bar lists only the workspaces on its own monitor. A
-//   persistent number whose workspace is open on another monitor shows there.
+// Each monitor owns a block of ten workspace ids (see
+// default/hypr/monitor-workspaces.lua). A bar shows its monitor's persistent
+// slots and any other of its block that exist, then the workspaces only
+// visiting it from another block.
+//
+// The persistent setting on the bar entry lists the slots (1-10) shown even
+// before their workspace exists, 1-5 by default. An empty list shows only the
+// workspaces that exist.
 
+var SLOTS = 10
 var DEFAULT_PERSISTENT = [1, 2, 3, 4, 5]
 
-function validId(id) {
-  return typeof id === "number" && id % 1 === 0 && id > 0 && id <= 10
+function blockOf(id) {
+  return Math.floor((id - 1) / SLOTS)
 }
 
-function persistentIds(value) {
+function persistentSlots(value) {
   if (!(value instanceof Array)) return DEFAULT_PERSISTENT.slice()
 
-  var ids = []
+  var slots = []
   for (var i = 0; i < value.length; i++) {
-    if (validId(value[i]) && ids.indexOf(value[i]) === -1) ids.push(value[i])
+    var slot = value[i]
+    if (typeof slot === "number" && slot % 1 === 0 && slot >= 1 && slot <= SLOTS && slots.indexOf(slot) === -1) slots.push(slot)
   }
-  return ids
+  return slots
 }
 
 // workspaces: [{ id, monitor }] where monitor is the output name.
-function workspaceIds(workspaces, settings, screenName) {
+function workspaceIds(workspaces, settings, block, monitorName) {
   settings = settings || {}
-  var perMonitor = settings.perMonitor === true && !!screenName
-  var monitorOf = {}
   var ids = []
+  var guests = []
 
-  for (var i = 0; i < workspaces.length; i++) {
-    var workspace = workspaces[i]
-    if (!validId(workspace.id)) continue
-    monitorOf[workspace.id] = workspace.monitor
-    if (perMonitor && workspace.monitor !== screenName) continue
-    if (ids.indexOf(workspace.id) === -1) ids.push(workspace.id)
-  }
+  var slots = persistentSlots(settings.persistent)
+  for (var i = 0; i < slots.length; i++) ids.push(block * SLOTS + slots[i])
 
-  var persistent = persistentIds(settings.persistent)
-  for (var j = 0; j < persistent.length; j++) {
-    var id = persistent[j]
-    var elsewhere = perMonitor && monitorOf[id] !== undefined && monitorOf[id] !== screenName
-    if (!elsewhere && ids.indexOf(id) === -1) ids.push(id)
+  for (var j = 0; j < workspaces.length; j++) {
+    var id = workspaces[j].id
+    if (id <= 0) continue
+    if (blockOf(id) === block) {
+      if (ids.indexOf(id) === -1) ids.push(id)
+    } else if (workspaces[j].monitor === monitorName && monitorName !== "") {
+      guests.push(id)
+    }
   }
 
   ids.sort(function(left, right) { return left - right })
-  return ids
+  guests.sort(function(left, right) { return left - right })
+  return ids.concat(guests)
 }
 
 if (typeof module !== "undefined") {
   module.exports = {
-    persistentIds: persistentIds,
+    blockOf: blockOf,
+    persistentSlots: persistentSlots,
     workspaceIds: workspaceIds
   }
 }
