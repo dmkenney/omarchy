@@ -21,7 +21,8 @@ assertDeepEqual(model.workspaceIds(two, {}, 0, 'DP-1'), [1, 2, 3, 4, 5], 'defaul
 assertDeepEqual(model.workspaceIds(two, {}, 1, 'HDMI-A-1'), [11, 12, 13, 14, 15, 17, 20, 23], 'the second monitor counts its slots in its own block, then its guests')
 assertDeepEqual(model.workspaceIds(two, { persistent: [] }, 0, 'DP-1'), [1, 3], 'an empty persistent list shows only open workspaces')
 assertDeepEqual(model.workspaceIds(two, { persistent: [] }, 1, 'HDMI-A-1'), [17, 20, 23], 'an empty persistent list keeps the visiting workspaces')
-assertDeepEqual(model.workspaceIds(two, { persistent: [1, 10] }, 1, 'HDMI-A-1'), [11, 17, 20, 23], 'persistent slots map into the block')
+assertDeepEqual(model.workspaceIds(two, { persistent: [2] }, 1, 'HDMI-A-1'), [12, 17, 20, 23], 'persistent slots map into the block')
+assertDeepEqual(model.workspaceIds(two, { persistent: [10] }, 0, 'DP-1'), [1, 3, 10], 'slot 10 is the last of the block')
 assertDeepEqual(model.workspaceIds(two, { persistent: [] }, 1, ''), [17, 20], 'no guests without a known monitor')
 assertDeepEqual(model.workspaceIds([{ id: -98, monitor: 'DP-1' }], { persistent: [] }, 0, 'DP-1'), [], 'special workspaces are left out')
 
