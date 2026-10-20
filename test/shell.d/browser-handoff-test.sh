@@ -56,6 +56,14 @@ expected=$(printf 'START\0%s\0browser\0--app=https://example.test/a b' "$test_tm
   fail "the handoff sends the working directory and arguments as Chromium's singleton expects" "$(od -c <"$received")"
 pass "a command line is handed to the running browser over its singleton socket"
 
+(cd "$test_tmp" && XDG_ACTIVATION_TOKEN=token-from-click "$ROOT/bin/omarchy-cmd-browser-handoff" chromium "https://example.test/c") ||
+  fail "the running browser acknowledges a handoff with an activation token"
+
+expected=$(printf 'START\0%s\0browser\0--xdg-activation-token=token-from-click\0https://example.test/c' "$test_tmp" | od -c)
+[[ $(od -c <"$received") == "$expected" ]] ||
+  fail "the handoff passes the activation token the way a browser process does" "$(od -c <"$received")"
+pass "the handoff passes the activation token to the running browser"
+
 ! "$ROOT/bin/omarchy-cmd-browser-handoff" chromium --user-data-dir=/elsewhere https://example.test ||
   fail "another data directory is left to a browser of its own"
 mkdir -p "$test_tmp/wrapper"

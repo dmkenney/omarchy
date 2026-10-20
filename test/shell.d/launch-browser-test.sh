@@ -83,6 +83,16 @@ grep -Fx '^chromium.*$' "$focus_log" >/dev/null ||
 
 pass "browser launcher follows opened links to the browser workspace"
 
+! grep -F -- '--setenv' "$launch_log" >/dev/null || fail "browser launcher sets no token when it has none"
+
+HOME="$test_home" PATH="$mock_bin:$PATH" XDG_ACTIVATION_TOKEN=token-from-click \
+  OMARCHY_TEST_BROWSER_LAUNCH="$launch_log" OMARCHY_TEST_BROWSER_FOCUS="$focus_log" \
+  bash "$ROOT/bin/omarchy-launch-browser" "https://example.test/clicked"
+
+grep -F -- '--setenv=XDG_ACTIVATION_TOKEN' "$launch_log" >/dev/null ||
+  fail "browser launcher carries the activation token into the browser's unit"
+pass "browser launcher carries the activation token into the browser's unit"
+
 rm -f "$launch_log"
 cat >"$mock_bin/omarchy-cmd-browser-handoff" <<'SH'
 #!/bin/bash
