@@ -4,6 +4,10 @@ set -euo pipefail
 
 source "$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)/base-test.sh"
 
+# A token from the shell running the tests would reach every launch below;
+# the cases that want one set it themselves.
+unset XDG_ACTIVATION_TOKEN
+
 test_tmp=$(mktemp -d)
 trap 'rm -rf "$test_tmp"' EXIT
 
