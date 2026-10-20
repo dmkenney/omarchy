@@ -14,8 +14,17 @@
 -- clicking a web app's notification runs the notification's default action, and
 -- only when nothing was invoked does the shell raise the sender by class
 -- (shell/plugins/notifications/Service.qml), so a web app whose activation
--- request is suppressed has nothing left to bring its window up. The suffixes
--- are the names the Chromium releases ship under (chromium and chromium-browser
+-- request is suppressed has nothing left to bring its window up.
+--
+-- A browser's own notification has no such escape: clicking a Teams or Slack
+-- toast that came from a browser tab runs the same default action, the page
+-- focuses its window and the browser asks Hyprland for the activation this rule
+-- suppresses, so the click would only close the toast. No per-window switch
+-- separates that request from a URL handoff -- both are the same client asking
+-- to be raised -- so a browser that has to raise itself from a notification
+-- needs the shell to focus the window the request named (issue #7738) rather
+-- than a narrower rule here. The suffixes are the names the Chromium releases
+-- ship under (chromium and chromium-browser
 -- on one machine; google-chrome-stable/-beta/-dev/-unstable; Brave's
 -- -beta/-dev/-nightly and Edge's -beta/-dev channel builds, which are their own
 -- packages and report their own class; Vivaldi's -snapshot), none of which the
