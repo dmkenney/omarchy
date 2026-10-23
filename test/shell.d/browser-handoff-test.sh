@@ -68,6 +68,19 @@ expected=$(printf 'START\0%s\0browser\0--xdg-activation-token=token-from-click\0
   fail "the handoff passes the activation token the way a browser process does" "$(od -c <"$received")"
 pass "the handoff passes the activation token to the running browser"
 
+if [[ $(type -P microsoft-edge-stable) == "/usr/bin/microsoft-edge-stable" ]]; then
+  mkdir -p "$XDG_CONFIG_HOME/microsoft-edge"
+  ln -s "$socket" "$XDG_CONFIG_HOME/microsoft-edge/SingletonSocket"
+  (cd "$test_tmp" && "$ROOT/bin/omarchy-cmd-browser-handoff" microsoft-edge-stable --app=https://example.test/d --ignore-certificate-errors) ||
+    fail "the running Edge acknowledges a handed off command line"
+
+  [[ $(tr '\0' '\n' <"$received") =~ ^START$'\n'"$test_tmp"$'\n'[0-9]{17}$'\n'0$'\n'browser$'\n'--app=https://example.test/d$'\n'--ignore-certificate-errors$ ]] ||
+    fail "the handoff sends Edge the two fields its own handoff adds after the directory" "$(od -c <"$received")"
+  pass "Edge is handed the fields that keep it from dropping two arguments"
+else
+  skip "Edge handoff needs /usr/bin/microsoft-edge-stable"
+fi
+
 ! "$ROOT/bin/omarchy-cmd-browser-handoff" chromium --user-data-dir=/elsewhere https://example.test ||
   fail "another data directory is left to a browser of its own"
 mkdir -p "$test_tmp/wrapper"
