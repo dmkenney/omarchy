@@ -684,6 +684,38 @@ done
 jq -e "$saved" "$config" >/dev/null || fail "a bar change is saved again once shell.json is fixed" "$(cat "$config")"
 pass "a bar change is saved again once shell.json is fixed"
 
+# git replaces a file by deleting it and writing a new one, and dotfiles setups
+# often link shell.json to such a file, whose deletion also ends the watch. In
+# that gap the shell keeps the config it has and saves nothing, then reads the
+# new file once it is there.
+clock_format_is() {
+  jq -e --arg f "$1" 'any(.bar.layout[][]; .id? == "omarchy.clock" and .format? == $f)' \
+    <<<"$(scratch_ipc shell listShellConfig)" >/dev/null 2>&1
+}
+target="$SCRATCH_DIR/linked-shell.json"
+cp "$config" "$target"
+ln -sfn "$target" "$config"
+sleep 0.5
+rm "$target"
+sleep 0.5
+[[ $(center_ids) == *omarchy.microphone* ]] ||
+  fail_with_log "the shell keeps its config while shell.json is missing"
+result=$(scratch_ipc shell setBarWidget omarchy.clock format '"HH:mm"' '{}' 2>&1 || true)
+[[ $result == "ok" ]] || fail "bar widget setting is applied while shell.json is missing" "$result"
+sleep 0.5
+[[ ! -e $target ]] || fail "a bar change does not write shell.json while it is missing" "$(cat "$target")"
+pass "a bar change does not write shell.json while it is missing"
+
+jq '(.bar.layout[][] | select(.id? == "omarchy.clock")).format = "h:mm"' \
+  <<<"$(scratch_ipc shell listShellConfig)" >"$target"
+for _ in {1..40}; do
+  clock_format_is "h:mm" && break
+  sleep 0.1
+done
+clock_format_is "h:mm" || fail_with_log "the shell loads the new shell.json once it is written"
+pass "the shell keeps its config while shell.json is replaced, then loads the new file"
+cp --remove-destination "$target" "$config"
+
 # Run the replacement-bar probes last: switching bar loaders can transiently
 # leave bar-aware panels without a visual host, which should not add noise to
 # the default-bar assertions above.
