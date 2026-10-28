@@ -63,6 +63,8 @@ ShellRoot {
   property var shellConfig: builtinShellConfig
   // shell.json has text the shell could not use; persisting would replace it with defaults.
   property bool userConfigUnreadable: false
+  // A valid shell.json has been read since startup.
+  property bool userConfigLoaded: false
   property bool pluginReloading: false
   property bool pluginReloadPending: false
 
@@ -93,7 +95,16 @@ ShellRoot {
         console.warn("shell.json parse failed, using defaults:", e)
       }
     }
+    if (!userText.trim() && userConfigLoaded) {
+      // git and some editors replace shell.json by deleting it and writing a new one.
+      // Falling back to defaults in that gap let the next settings save write the
+      // defaults over the incoming file. Keep the loaded config; reload picks up the
+      // new file, and nothing is saved until it is there.
+      userConfigUnreadable = true
+      return
+    }
     userConfigUnreadable = !!userText.trim() && !user
+    if (user) userConfigLoaded = true
     shellConfig = user || defaults
   }
 
