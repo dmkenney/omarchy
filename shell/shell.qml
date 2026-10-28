@@ -65,6 +65,7 @@ ShellRoot {
   property bool userConfigUnreadable: false
   // A valid shell.json has been read since startup.
   property bool userConfigLoaded: false
+  property int userConfigRetries: 0
   property bool pluginReloading: false
   property bool pluginReloadPending: false
 
@@ -72,6 +73,13 @@ ShellRoot {
     id: localPluginReloadTimer
     interval: 150
     onTriggered: shell.reloadPlugins()
+  }
+
+  // The file watch ends with the deleted file, so read again until the new one is there.
+  Timer {
+    id: userConfigRetryTimer
+    interval: 200
+    onTriggered: userConfigFile.reload()
   }
 
   onShellConfigChanged: {
@@ -98,11 +106,16 @@ ShellRoot {
     if (!userText.trim() && userConfigLoaded) {
       // git and some editors replace shell.json by deleting it and writing a new one.
       // Falling back to defaults in that gap let the next settings save write the
-      // defaults over the incoming file. Keep the loaded config; reload picks up the
-      // new file, and nothing is saved until it is there.
+      // defaults over the incoming file. Keep the loaded config and save nothing
+      // until the new file is there, reading again for up to five seconds.
       userConfigUnreadable = true
+      if (userConfigRetries < 25) {
+        userConfigRetries++
+        userConfigRetryTimer.restart()
+      }
       return
     }
+    userConfigRetries = 0
     userConfigUnreadable = !!userText.trim() && !user
     if (user) userConfigLoaded = true
     shellConfig = user || defaults
